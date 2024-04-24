@@ -17,3 +17,9 @@ For paragraph chunking database: go into the p_chunk folder and run:
 ```
 python chat.py model threshold input_prompt result_limit temperature output_config exp_mode
 ```
+
+For paragraph chunking database: go into the 200_chunk folder and run:
+
+```
+
+```
