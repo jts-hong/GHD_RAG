@@ -1,0 +1,11 @@
+{
+    "Part": "HAS_SUBPART",
+    "Subpart": [
+        "HAS_SECTION",
+        "HAS_TABLE"
+    ],
+    "Section": [
+        "HAS_FORMULA",
+        "HAS_P"
+    ]
+}

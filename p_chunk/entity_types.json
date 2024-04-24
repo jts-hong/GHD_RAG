@@ -1,0 +1,8 @@
+{
+    "Part": "Segment of a subchapter, detailing more specific topics, regulations, agencies and guidelines.",
+    "Subpart": "Further division of a part, detailing very specific aspects or regulations and topic of interest.",
+    "Section": "The most granular division, often representing specific area in individual regulations or guidelines.",
+    "Section_Formula": "Include formulas related to enviornmental regulations mentioned in the corresponding section and includes their explanation in extraction.",
+    "Section_P": "Paragraph of texts of the corresponding section, provide most detailed information in regards regulation or guidelines.",
+    "Table": "A table of data that is related to the corresponding section."
+}

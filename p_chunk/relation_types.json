@@ -1,0 +1,7 @@
+{
+    "HAS_SUBPART": "A part contains one or more subparts.",
+    "HAS_SECTION": "A subpart contains one or more sections.",
+    "HAS_FORMULA": "A section contains one or more formulas.",
+    "HAS_P": "A section contains one or more chunks of texts.",
+    "HAS_TABLE": "A SubPart contains one or more tables."
+}
