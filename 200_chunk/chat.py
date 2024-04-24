@@ -20,7 +20,7 @@ if os.path.exists(env_path):
     print("Environment variables loaded successfully.")
 else:
     print("Error: .env file not found.")
-
+    
 # Load Azure OpenAI credentials
 resource_name = os.environ.get("AZURE_RESOURCE_NAME")
 chat_deployment_name = os.environ.get("AZURE_OPENAI_CHAT_DEPLOYMENT")
@@ -33,8 +33,6 @@ api_url = f"https://{resource_name}.openai.azure.com/openai/deployments/{chat_de
 username = os.environ.get("NEO4J_USERNAME")
 password = os.environ.get("NEO4J_PASSWORD")
 url = os.environ.get("NEO4J_URI")
-
-print(api_key)
 
 # Creating AzureOpneAI client
 client = AzureOpenAI(
@@ -89,35 +87,31 @@ vector_index = Neo4jVector.from_existing_graph(
     url=url,
     username=username,
     password=password,
-    node_label="Section_P",
+    node_label="Chunks",
     text_node_properties=['text'],
     embedding_node_property='embedding',
 )
-
 
 entity_types = {
     "Part": "Segment of a subchapter, detailing more specific topics, regulations, agencies and guidelines.",
     "Subpart": "Further division of a part, detailing very specific aspects or regulations and topic of interest.",
     "Section": "The most granular division, often representing specific area in individual regulations or guidelines.",
     "Section_Formula": "Include formulas related to enviornmental regulations mentioned in the corresponding section and includes their explanation in extraction.",
-    "Section_P": "Paragraph of texts of the corresponding section, provide most detailed information in regards regulation or guidelines.",
-    "Table": "A table of data that is related to the corresponding section."
+    "Chunks": "Chunks of texts of the corresponding section, provide most detailed information in regards regulation or guidelines."
 }
 
 relation_types = {
     "HAS_SUBPART": "A part contains one or more subparts.",
     "HAS_SECTION": "A subpart contains one or more sections.",
-    "HAS_FORMULA": "A section contains one or more formulas.",
-    "HAS_P": "A section contains one or more chunks of texts.",
-    "HAS_TABLE": "A SubPart contains one or more tables."
+    "HAS_IMAGE": "A section contains one or more formulas.",
+    "HAS_TEXT": "A section contains one or more chunks of texts."
 }
 
 entity_relationship_match = {
     "Part": "HAS_SUBPART",
-    "Subpart": ["HAS_SECTION","HAS_TABLE"],
-    "Section": ["HAS_FORMULA", "HAS_P"]
+    "Subpart": "HAS_SECTION",
+    "Section": ["HAS_IMAGE", "HAS_TEXT"]
 }
-
 
 one_shot_input_prompt = f"""
     You are a helpful agent designed to fetch information from a graph database structured around environmental regulations.
@@ -268,17 +262,16 @@ def create_input_prompt_query(text, threshold=0.8):
     for key, val in query_data.items():
         embeddings_data.append(f"${key}Embedding AS {key}Embedding")
     query = "WITH " + ",\n".join(e for e in embeddings_data)
-    query += "\nMATCH (p:Section_P)"
+    query += "\nMATCH (c:Chunks)"
     # Find matching
     similarity_data = []
     for key, val in query_data.items():
         similarity_data.append(
-            f"gds.similarity.cosine(p.embedding, {key}Embedding) > {threshold}"
+            f"gds.similarity.cosine(c.embedding, {key}Embedding) > {threshold}"
         )
     query += "\nWHERE "
     query += " OR ".join(e for e in similarity_data)
-    query += "\nRETURN p.text, ID(p), p.p_id,"+ ", ".join(f"gds.similarity.cosine(p.embedding, {key}Embedding) AS similarity_score_{key}" for key in query_data.keys())
-    # print(query)
+    query += "\nRETURN c.text, ID(c), " + ", ".join(f"gds.similarity.cosine(c.embedding, {key}Embedding) AS similarity_score_{key}" for key in query_data.keys())
     return query
 
 
@@ -313,18 +306,18 @@ def LLM_output_result_config_1(result, question, model="chat35",result_limit=80,
 
     result_text = ""
     for res in result[:result_limit]:
-        result_text += res["p.text"] + " "
+        result_text += res["c.text"] + " "
 
     """
     Getting the formulas mentioned in the sections
     """
 
-    section_ids = [res["ID(p)"] for res in result[:result_limit]]
-    section_query = f" MATCH (p:Section_P) WHERE id(p) = {section_ids[0]}"
+    section_ids = [res["ID(c)"] for res in result[:result_limit]]
+    section_query = f" MATCH (c:Chunk) WHERE id(c) = {section_ids[0]}"
     for id in section_ids[1:]:
-        section_query += f" OR id(p) = {id}"
+        section_query += f" OR id(c) = {id}"
 
-    section_query += f" MATCH (s:Section)-[:HAS_P]->(p) RETURN ID(s),s.title"
+    section_query += f" MATCH (s:Section)-[:HAS_TEXT]->(c) RETURN ID(s),s.title"
     section_result = graph.query(section_query)
     section_id_search = [res["ID(s)"] for res in section_result]
     section_id_search = list(set(section_id_search))
@@ -512,18 +505,18 @@ def LLM_output_result_config_2(result, question, model="chat35",result_limit=80,
 
     result_text = ""
     for res in result[:result_limit]:
-        result_text += res["p.text"] + " "
+        result_text += res["c.text"] + " "
 
     """
     Getting the formulas mentioned in the sections
     """
 
-    section_ids = [res["ID(p)"] for res in result[:result_limit]]
-    section_query = f" MATCH (p:Section_P) WHERE id(p) = {section_ids[0]}"
+    section_ids = [res["ID(c)"] for res in result[:result_limit]]
+    section_query = f" MATCH (c:Chunks) WHERE id(c) = {section_ids[0]}"
     for id in section_ids[1:]:
-        section_query += f" OR id(p) = {id}"
+        section_query += f" OR id(c) = {id}"
 
-    section_query += f" MATCH (s:Section)-[:HAS_P]->(p) RETURN ID(s),s.title"
+    section_query += f" MATCH (s:Section)-[:HAS_TEXT]->(c) RETURN ID(s),s.title"
     section_result = graph.query(section_query)
     section_id_search = [res["ID(s)"] for res in section_result]
     section_id_search = list(set(section_id_search))
@@ -736,18 +729,18 @@ def LLM_output_result_config_3(result, question, model="chat35",result_limit=80,
 
     result_text = ""
     for res in result[:result_limit]:
-        result_text += res["p.text"] + " "
+        result_text += res["c.text"] + " "
 
     """
     Getting the formulas mentioned in the sections
     """
 
-    section_ids = [res["ID(p)"] for res in result[:result_limit]]
-    section_query = f" MATCH (p:Section_P) WHERE id(p) = {section_ids[0]}"
+    section_ids = [res["ID(c)"] for res in result[:result_limit]]
+    section_query = f" MATCH (c:Chunks) WHERE id(c) = {section_ids[0]}"
     for id in section_ids[1:]:
-        section_query += f" OR id(p) = {id}"
+        section_query += f" OR id(c) = {id}"
 
-    section_query += f" MATCH (s:Section)-[:HAS_P]->(p) RETURN ID(s),s.title"
+    section_query += f" MATCH (s:Section)-[:HAS_TEXT]->(c) RETURN ID(s),s.title"
     section_result = graph.query(section_query)
     section_id_search = [res["ID(s)"] for res in section_result]
     section_id_search = list(set(section_id_search))

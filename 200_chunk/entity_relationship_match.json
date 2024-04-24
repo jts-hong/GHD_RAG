@@ -1,0 +1,5 @@
+{
+    "Part": "HAS_SUBPART",
+    "Subpart": "HAS_SECTION",
+    "Section": ["HAS_IMAGE", "HAS_TEXT"]
+}
