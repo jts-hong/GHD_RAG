@@ -11,3 +11,11 @@ This repo is an essential tool for conducting comprehensive tests and evaluation
 * **Error Handling and Progress Tracking:** The notebook is equipped with error handling to address issues during execution, ensuring stability and reliability during tests. Progress indicators are also incorporated to monitor the duration of operations, especially useful during lengthy experiment runs.
 
 ## Usage:
+
+For paragraph chunking database: go into the p_chunk folder and run:
+
+`python
+
+python chat.py model threshold input_prompt result_limit temperature output_config exp_mode
+
+`
