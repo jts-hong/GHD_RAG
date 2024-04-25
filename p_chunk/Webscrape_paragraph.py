@@ -218,7 +218,7 @@ df_formula.section_title = df_bs.section_title.str.replace('§', '')
 # Assuming df is your DataFrame
 
 # Connect to Neo4j
-uri = "neo4j+s://f6a9b8e4.databases.neo4j.io" 
+uri = "your online neo4j database uri" 
 driver = GraphDatabase.driver(uri, auth=(username, password))
 
 def create_graph(tx, part_title, subpart_title, section_title, section_p, section_text):
@@ -247,7 +247,6 @@ with driver.session() as session:
 
 driver.close()
 
-uri = "neo4j+s://f6a9b8e4.databases.neo4j.io" 
 driver = GraphDatabase.driver(uri, auth=(username, password))
 
 def create_and_link_manufacturer(tx, subpart_title, table_title, content):
@@ -268,7 +267,6 @@ with driver.session() as session:
 
 driver.close()
 
-uri = "neo4j+s://f6a9b8e4.databases.neo4j.io" 
 driver = GraphDatabase.driver(uri, auth=(username, password))
 
 def create_and_link_manufacturer(tx, section_title, section_img, section_ex):
