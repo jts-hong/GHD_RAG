@@ -10,6 +10,10 @@ This repo is an essential tool for conducting comprehensive tests and evaluation
 * **Results Management:** After running experiments, the notebook handles the output by organizing the results and saving them into Excel files. This feature is crucial for later analysis and review of the chatbot's performance across different settings.
 * **Error Handling and Progress Tracking:** The notebook is equipped with error handling to address issues during execution, ensuring stability and reliability during tests. Progress indicators are also incorporated to monitor the duration of operations, especially useful during lengthy experiment runs.
 
+## Webscraping:
+
+The file we used to webscrape the data is provided in the each chunking strategy folder. The file is used to scrape the data from the website and store it in dataframe, then used to populate the Neo4j database.
+
 ## Neo4j Database Setup:
 
 To set up the Neo4j Graph Database, use the dump files for each chunking strategy (paragraph or 200_chunk) to populate the database with relevant data. The database will be used to retrieve paragraphs based on user queries during chatbot interactions. To run experiments, install the Neo4j Desktop application and create a new database using the dump files provided. Make sure to have APOC and Graph Data Science libraries installed in the database.
