@@ -13,7 +13,7 @@ import sys
 
 
 # Load environment variables
-env_path = os.path.join(os.path.abspath('..'), 'cred.env')
+env_path = os.path.join(os.path.abspath(".."), "cred.env")
 
 if os.path.exists(env_path):
     dotenv.load_dotenv(env_path, override=True)
@@ -47,51 +47,65 @@ client = AzureOpenAI(
 
 graph = Neo4jGraph(url=url, username=username, password=password)
 
-graph_driver = GraphDatabase.driver(url, auth=(username, password), max_connection_lifetime=200)
+graph_driver = GraphDatabase.driver(
+    url, auth=(username, password), max_connection_lifetime=200
+)
 
 # Creating vector indexes
 vector_index = Neo4jVector.from_existing_graph(
-    AzureOpenAIEmbeddings(azure_deployment=embedding_deployment_name,
-    openai_api_version=api_version, azure_endpoint=endpoint),
+    AzureOpenAIEmbeddings(
+        azure_deployment=embedding_deployment_name,
+        openai_api_version=api_version,
+        azure_endpoint=endpoint,
+    ),
     url=url,
     username=username,
     password=password,
     node_label="Part",
-    text_node_properties=['title'],
-    embedding_node_property='embedding',
+    text_node_properties=["title"],
+    embedding_node_property="embedding",
 )
 
 vector_index = Neo4jVector.from_existing_graph(
-    AzureOpenAIEmbeddings(azure_deployment=embedding_deployment_name,
-    openai_api_version=api_version, azure_endpoint=endpoint),
+    AzureOpenAIEmbeddings(
+        azure_deployment=embedding_deployment_name,
+        openai_api_version=api_version,
+        azure_endpoint=endpoint,
+    ),
     url=url,
     username=username,
     password=password,
     node_label="SubPart",
-    text_node_properties=['title'],
-    embedding_node_property='embedding',
+    text_node_properties=["title"],
+    embedding_node_property="embedding",
 )
 
 vector_index = Neo4jVector.from_existing_graph(
-    AzureOpenAIEmbeddings(azure_deployment=embedding_deployment_name,
-    openai_api_version=api_version, azure_endpoint=endpoint),
+    AzureOpenAIEmbeddings(
+        azure_deployment=embedding_deployment_name,
+        openai_api_version=api_version,
+        azure_endpoint=endpoint,
+    ),
     url=url,
     username=username,
     password=password,
     node_label="Section",
-    text_node_properties=['title'],
-    embedding_node_property='embedding',
+    text_node_properties=["title"],
+    embedding_node_property="embedding",
 )
 
 vector_index = Neo4jVector.from_existing_graph(
-    AzureOpenAIEmbeddings(azure_deployment=embedding_deployment_name,
-    openai_api_version=api_version, azure_endpoint=endpoint),
+    AzureOpenAIEmbeddings(
+        azure_deployment=embedding_deployment_name,
+        openai_api_version=api_version,
+        azure_endpoint=endpoint,
+    ),
     url=url,
     username=username,
     password=password,
     node_label="Section_P",
-    text_node_properties=['text'],
-    embedding_node_property='embedding',
+    text_node_properties=["text"],
+    embedding_node_property="embedding",
 )
 
 
@@ -101,7 +115,7 @@ entity_types = {
     "Section": "The most granular division, often representing specific area in individual regulations or guidelines.",
     "Section_Formula": "Include formulas related to enviornmental regulations mentioned in the corresponding section and includes their explanation in extraction.",
     "Section_P": "Paragraph of texts of the corresponding section, provide most detailed information in regards regulation or guidelines.",
-    "Table": "A table of data that is related to the corresponding section."
+    "Table": "A table of data that is related to the corresponding section.",
 }
 
 relation_types = {
@@ -109,13 +123,13 @@ relation_types = {
     "HAS_SECTION": "A subpart contains one or more sections.",
     "HAS_FORMULA": "A section contains one or more formulas.",
     "HAS_P": "A section contains one or more chunks of texts.",
-    "HAS_TABLE": "A SubPart contains one or more tables."
+    "HAS_TABLE": "A SubPart contains one or more tables.",
 }
 
 entity_relationship_match = {
     "Part": "HAS_SUBPART",
-    "Subpart": ["HAS_SECTION","HAS_TABLE"],
-    "Section": ["HAS_FORMULA", "HAS_P"]
+    "Subpart": ["HAS_SECTION", "HAS_TABLE"],
+    "Section": ["HAS_FORMULA", "HAS_P"],
 }
 
 
@@ -229,7 +243,7 @@ three_shot_input_prompt = f"""
 """
 
 
-def LLM_input_result(prompt, model, input_prompt,temperature):
+def LLM_input_result(prompt, model, input_prompt, temperature):
     """
     This function defines a query to the Azure OpenAI chat model
     and return its interpretation of the prompt with desired output format.
@@ -277,17 +291,28 @@ def create_input_prompt_query(text, threshold=0.8):
         )
     query += "\nWHERE "
     query += " OR ".join(e for e in similarity_data)
-    query += "\nRETURN p.text, ID(p), p.p_id,"+ ", ".join(f"gds.similarity.cosine(p.embedding, {key}Embedding) AS similarity_score_{key}" for key in query_data.keys())
+    query += "\nRETURN p.text, ID(p), p.p_id," + ", ".join(
+        f"gds.similarity.cosine(p.embedding, {key}Embedding) AS similarity_score_{key}"
+        for key in query_data.keys()
+    )
     # print(query)
     return query
 
 
-def query_database_result(prompt, model="chat35",input_prompt = one_shot_input_prompt, temperature = 0,threshold=0.8):
+def query_database_result(
+    prompt,
+    model="chat35",
+    input_prompt=one_shot_input_prompt,
+    temperature=0,
+    threshold=0.8,
+):
     """
     This function queries the graph database to find matching sections based on the user prompt.
     """
 
-    response = LLM_input_result(prompt, model,input_prompt=input_prompt,temperature=temperature)
+    response = LLM_input_result(
+        prompt, model, input_prompt=input_prompt, temperature=temperature
+    )
     embeddingsParams = {}
     query = create_input_prompt_query(response, threshold=threshold)
     query_data = json.loads(response)
@@ -298,11 +323,17 @@ def query_database_result(prompt, model="chat35",input_prompt = one_shot_input_p
 
     # Sort the chunks based on similarity scores in descending order
     # Dynamically generate the key for sorting based on query_data keys
-    result = sorted(result, key=lambda x: x[f"similarity_score_{list(query_data.keys())[0]}"], reverse=True)
+    result = sorted(
+        result,
+        key=lambda x: x[f"similarity_score_{list(query_data.keys())[0]}"],
+        reverse=True,
+    )
     return result, response
 
 
-def LLM_output_result_config_1(result, question, model="chat35",result_limit=80,temperature = 0):
+def LLM_output_result_config_1(
+    result, question, model="chat35", result_limit=80, temperature=0
+):
     """
     This function inputs the matched section texts and return its interpretation of the prompt with desired output format.
     """
@@ -359,8 +390,6 @@ def LLM_output_result_config_1(result, question, model="chat35",result_limit=80,
         table_results_final.append(res["t.content"])
 
     table_results_final = str(table_results_final)
-
-
 
     """
     Generating summaries and anlysis of the chunked texts
@@ -423,7 +452,6 @@ def LLM_output_result_config_1(result, question, model="chat35",result_limit=80,
     )
 
     table_analysis_result = table_analysis.choices[0].message.content
-
 
     """
     Generating summaries and anlysis of the formulas
@@ -499,9 +527,12 @@ def LLM_output_result_config_1(result, question, model="chat35",result_limit=80,
 
     integrate_response = final_analysis.choices[0].message.content
 
-    return integrate_response, section_title_search,intergate_text
+    return integrate_response, section_title_search, intergate_text
 
-def LLM_output_result_config_2(result, question, model="chat35",result_limit=80,temperature = 0):
+
+def LLM_output_result_config_2(
+    result, question, model="chat35", result_limit=80, temperature=0
+):
     """
     This function inputs the matched section texts and return its interpretation of the prompt with desired output format.
     """
@@ -558,8 +589,6 @@ def LLM_output_result_config_2(result, question, model="chat35",result_limit=80,
         table_results_final.append(res["t.content"])
 
     table_results_final = str(table_results_final)
-
-
 
     """
     Generating summaries and anlysis of the chunked texts
@@ -610,21 +639,24 @@ def LLM_output_result_config_2(result, question, model="chat35",result_limit=80,
 
     text_analysis_result = text_analysis.choices[0].message.content
 
-
     """
     Generating summaries and anlysis of the tables
     """
 
     table_analysis_system_prompt = f"""
-    You are a helpful agent designed to fetch information from a graph database structured around environmental regulations. 
+    You are a helpful agent designed to analyze the table information provided.
     Here is the question asked: {question}
-    Here is the related analyzed text extracted from the database: {text_analysis_result}
-    Given the following input, which includes tables in json format. Understand the content of the table. Find any tables that are helpful to answering the question or to calculating in the question and reconstruct them into a helpful format.
-    If information about the table is missing or not clear, do not infer any information.
+    Based on your analysis, directly give a human-like answer to the question based on the relevant information.
+    If the question involves any calculations, measures, or methods, ensure to address them in your answer.
+
     Present your analysis in a structured JSON object format under the key "result".
-    The expected example output format would be:
+
+    The example question would be:
+    "Are the emissions factors listed in Table W-1A for both leaking components and non-leaking components? How do you calculate emissions from leaking components if onshore petroleum and natural gas source are not required to monitor components?"
+
+    The answer you are expected to generate should look like:
     {{
-        "result" : "The table describes how many devices should be registered for various categories."
+        "result" : "Equipment leak emissions in onshore production are to be estimated using methods provided in 98.233(r)(2). Hence, no leak detection of emissions is required for onshore production.  Table W-1A provides population emission factors, which represent the emissions on an average from the entire population of components – both leaking and non-leaking; please see section 6(d) of the Technical Support Document (http://www.epa.gov/ghgreporting/documents/pdf/2010/Subpart-W_TSD.pdf) for further details on the concept of population emission factors."
     }}
     """
 
@@ -643,22 +675,24 @@ def LLM_output_result_config_2(result, question, model="chat35",result_limit=80,
 
     table_analysis_result = table_analysis.choices[0].message.content
 
-
     """
     Generating summaries and anlysis of the formulas
     """
 
     formulas_analysis_system_prompt = f"""
-    You are a helpful agent designed to fetch information from a graph database structured around environmental regulations. 
+    You are a helpful agent designed to analyze the Latex math formula information provided.
     Here is the question asked: {question}
-    Here is the related analyzed text extracted from the database: {text_analysis_result}
-    Given the following input, which includes LaTeX equations and its extraction or explanation, provide a comprehensive explanation of the LaTeX formulas. 
-    If information about the formulas is missing or not clear, do not infer any information.
+    Based on your analysis, directly give a human-like answer to the question based on the relevant information.
+    If the question involves any calculations, measures, or use of math formulas, ensure to address them in your answer.
+
     Present your analysis in a structured JSON object format under the key "result".
-   
+
+    The example question would be:
+    "What are my pneumatic device emissions? I have 100 high bleed devices."
+
     The answer you are expected to generate should look like:
     {{
-        "result" : "To calculate CH4 and CO2 volumetric emissions from natural gas driven pneumatic pump venting , we need to use Equation W-2 of §98.233 where Es,i = Annual total volumetric GHG emissions at standard conditions in standard cubic feet per year from all natural gas driven pneumatic pump venting, for GHGi. Count = Total number of natural gas driven pneumatic pumps. EF = Population emissions factors for natural gas driven pneumatic pumps (in standard cubic feet per hour per pump) listed in Table W-1A of this subpart for onshore petroleum and natural gas production and onshore petroleum and natural gas gathering and boosting facilities. GHGi = Concentration of GHGi, CH4, or CO2, in produced natural gas as defined in paragraph (u)(2)(i) of this section. T = Average estimated number of hours in the operating year the pumps were operational using engineering estimates based on best available data. Default is 8,760 hours.The the following assumptions will be made to complete the calculation: 1) T will be the default value 86 hours. 2) The concentration of GHGi is 95% for CH4 and 1% for CO2. EF for High Continuous Bleed Pneumatic Device Vents is 37.3 scf/hour/component. Your pneumatic device emissions would be 31,041,060 scf CH4 which is calculated as 100 * 37.3 scf / hr / device * 0.95 * 8760 hours and 326,748 scf CO2 which is calculated as 100 * 37.3 scf / hr / device * 0.01 * 8760 hours."
+        "result" : "To calculate CH4 and CO2 volumetric emissions from natural gas driven pneumatic pump venting, we need to use Equation W-2 of §98.233 where Es,i = Annual total volumetric GHG emissions at standard conditions in standard cubic feet per year from all natural gas driven pneumatic pump venting, for GHGi. Count = Total number of natural gas driven pneumatic pumps. EF = Population emissions factors for natural gas driven pneumatic pumps (in standard cubic feet per hour per pump) listed in Table W-1A of this subpart for onshore petroleum and natural gas production and onshore petroleum and natural gas gathering and boosting facilities. GHGi = Concentration of GHGi, CH4, or CO2, in produced natural gas as defined in paragraph (u)(2)(i) of this section. T = Average estimated number of hours in the operating year the pumps were operational using engineering estimates based on best available data. Default is 8,760 hours.The the following assumptions will be made to complete the calculation: 1) T will be the default value 86 hours. 2) The concentration of GHGi is 95% for CH4 and 1% for CO2. EF for High Continuous Bleed Pneumatic Device Vents is 37.3 scf/hour/component. Your pneumatic device emissions would be 31,041,060 scf CH4 which is calculated as 100 * 37.3 scf / hr / device * 0.95 * 8760 hours and 326,748 scf CO2 which is calculated as 100 * 37.3 scf / hr / device * 0.01 * 8760 hours."
     }}
     """
 
@@ -681,7 +715,6 @@ def LLM_output_result_config_2(result, question, model="chat35",result_limit=80,
     Ingeration of the results
     """
 
-    
     intergate_text = (
         json.loads(text_analysis_result)["result"]
         + formulas_analysis_result
@@ -689,23 +722,23 @@ def LLM_output_result_config_2(result, question, model="chat35",result_limit=80,
     )
 
     final_analysis_system_prompt = f"""
-        You are an intelligent agent tasked with integrating the answers from text analysis and table analysis to generate a final cohesive answer.
-        The question posed is: {question}
-        Below are the individual analyses:
+    You are an intelligent agent tasked with integrating the answers from text analysis, table analysis, and formula analysis to generate a final cohesive answer.
+    The question posed is: {question}
+    Below are the individual analyses:
 
-        Text Analysis Result:
-        {text_analysis_result}
+    Text Analysis Result:
+    {text_analysis_result}
 
-        Table Analysis Result:
-        {table_analysis_result}
-        
-        Formula Analysis Result:
-        {formulas_analysis_result}
+    Table Analysis Result:
+    {table_analysis_result}
+    
+    Formula Analysis Result:
+    {formulas_analysis_result}
 
-        Please generate a final cohesive answer integrating the information from all the analyses performed.
-        Ensure that your response is structured as a JSON object under the key "result".
-        
-        """
+    Please generate a final cohesive answer integrating the information from all the analyses performed.
+    Ensure that your response is structured as a JSON object under the key "result".
+    
+    """
 
     final_analysis = client.chat.completions.create(
         model=model,
@@ -722,10 +755,12 @@ def LLM_output_result_config_2(result, question, model="chat35",result_limit=80,
 
     integrate_response = final_analysis.choices[0].message.content
 
-    return integrate_response, section_title_search,intergate_text
+    return integrate_response, section_title_search, intergate_text
 
 
-def LLM_output_result_config_3(result, question, model="chat35",result_limit=80,temperature = 0):
+def LLM_output_result_config_3(
+    result, question, model="chat35", result_limit=80, temperature=0
+):
     """
     This function inputs the matched section texts and return its interpretation of the prompt with desired output format.
     """
@@ -782,8 +817,6 @@ def LLM_output_result_config_3(result, question, model="chat35",result_limit=80,
         table_results_final.append(res["t.content"])
 
     table_results_final = str(table_results_final)
-
-
 
     # System prompt for defining analysis
     system_prompt = f"""
@@ -886,13 +919,12 @@ def LLM_output_result_config_3(result, question, model="chat35",result_limit=80,
 
     text_analysis_result = text_analysis.choices[0].message.content
 
-
     """
     Generating summaries and anlysis of the tables
     """
 
-    table_analysis_result='' #initialize table result
-    if 'Table' in  analysis_type:
+    table_analysis_result = ""  # initialize table result
+    if "Table" in analysis_type:
         table_analysis_system_prompt = f"""
         You are a helpful agent designed to analyze the table information provided.
         Here is the question asked: {question}
@@ -925,13 +957,12 @@ def LLM_output_result_config_3(result, question, model="chat35",result_limit=80,
 
         table_analysis_result = table_analysis.choices[0].message.content
 
-
     """
     Generating summaries and anlysis of the formulas
     """
 
-    formulas_analysis_result='' #initialize formula analysis result
-    if 'Formula' in  analysis_type:
+    formulas_analysis_result = ""  # initialize formula analysis result
+    if "Formula" in analysis_type:
         formulas_analysis_system_prompt = f"""
         You are a helpful agent designed to analyze the Latex math formula information provided.
         Here is the question asked: {question}
@@ -968,7 +999,6 @@ def LLM_output_result_config_3(result, question, model="chat35",result_limit=80,
     Ingeration of the results
     """
 
-    
     intergate_text = (
         json.loads(text_analysis_result)["result"]
         + formulas_analysis_result
@@ -1005,44 +1035,100 @@ def LLM_output_result_config_3(result, question, model="chat35",result_limit=80,
 
     final_analysis_result = final_analysis.choices[0].message.content
 
-    return final_analysis_result, section_title_search,intergate_text
+    return final_analysis_result, section_title_search, intergate_text
 
 
-
-
-def chat_main(question,model="chat35",threshold=0.8,input_prompt=3,result_limit=50,temperature = 0,output_config = 2,exp_mode =0):
-
-    '''
+def chat_main(
+    question,
+    model="chat35",
+    threshold=0.8,
+    input_prompt=3,
+    result_limit=50,
+    temperature=0,
+    output_config=2,
+    exp_mode=0,
+):
+    """
     This function is the main function to run the chatbot.
-    '''
+    """
     if exp_mode == 0:
         if input_prompt == 1:
-            result,response = query_database_result(question,model = model,input_prompt=one_shot_input_prompt,temperature=temperature)
-            print(f"\nParameter: \nQuestion: {question}\nModel: {model}, Threshold: {threshold}, Result_limit: {result_limit}, Temperature: {temperature}, output_config: {output_config}\n")
+            result, response = query_database_result(
+                question,
+                model=model,
+                input_prompt=one_shot_input_prompt,
+                temperature=temperature,
+            )
+            print(
+                f"\nParameter: \nQuestion: {question}\nModel: {model}, Threshold: {threshold}, Result_limit: {result_limit}, Temperature: {temperature}, output_config: {output_config}\n"
+            )
             print(f"Found {len(result)} matching paragraphs\n")
             if output_config == 1:
-                inter_result,section_titles,context = LLM_output_result_config_1(result, question, model=model,result_limit=result_limit,temperature=temperature)
+                inter_result, section_titles, context = LLM_output_result_config_1(
+                    result,
+                    question,
+                    model=model,
+                    result_limit=result_limit,
+                    temperature=temperature,
+                )
             if output_config == 2:
-                inter_result,section_titles,context = LLM_output_result_config_2(result, question, model=model,result_limit=result_limit,temperature=temperature)
+                inter_result, section_titles, context = LLM_output_result_config_2(
+                    result,
+                    question,
+                    model=model,
+                    result_limit=result_limit,
+                    temperature=temperature,
+                )
             if output_config == 3:
-                inter_result,section_titles,context = LLM_output_result_config_3(result, question, model=model,result_limit=result_limit,temperature=temperature)
-            pprint.pp(("Analyzed Results:",json.loads(inter_result)['result']))
+                inter_result, section_titles, context = LLM_output_result_config_3(
+                    result,
+                    question,
+                    model=model,
+                    result_limit=result_limit,
+                    temperature=temperature,
+                )
+            pprint.pp(("Analyzed Results:", json.loads(inter_result)["result"]))
             print("\nFollowing Sections are referenced in the analysis:")
             for title in section_titles:
                 print(title.strip())
             # return json.loads(inter_result)['result'],section_titles,context
             return json.loads(inter_result)
         if input_prompt == 3:
-            result,response = query_database_result(question,model = model,input_prompt=three_shot_input_prompt,temperature=temperature)
-            print(f"\nParameter: \nQuestion: {question}\nModel: {model}, Threshold: {threshold}, Result_limit: {result_limit}, Temperature: {temperature}, output_config: {output_config}\n")
+            result, response = query_database_result(
+                question,
+                model=model,
+                input_prompt=three_shot_input_prompt,
+                temperature=temperature,
+            )
+            print(
+                f"\nParameter: \nQuestion: {question}\nModel: {model}, Threshold: {threshold}, Result_limit: {result_limit}, Temperature: {temperature}, output_config: {output_config}\n"
+            )
             print(f"Found {len(result)} matching paragraphs\n")
             if output_config == 1:
-                inter_result,section_titles,context = LLM_output_result_config_1(result, question, model=model,result_limit=result_limit,temperature=temperature)
+                inter_result, section_titles, context = LLM_output_result_config_1(
+                    result,
+                    question,
+                    model=model,
+                    result_limit=result_limit,
+                    temperature=temperature,
+                )
             if output_config == 2:
-                inter_result,section_titles,context = LLM_output_result_config_2(result, question, model=model,result_limit=result_limit,temperature=temperature)
+                inter_result, section_titles, context = LLM_output_result_config_2(
+                    result,
+                    question,
+                    model=model,
+                    result_limit=result_limit,
+                    temperature=temperature,
+                )
             if output_config == 3:
-                inter_result,section_titles,context = LLM_output_result_config_3(result, question, model=model,result_limit=result_limit,temperature=temperature)
-            pprint.pp(("Analyzed Results:",json.loads(inter_result)['result']))
+                inter_result, section_titles, context = LLM_output_result_config_3(
+                    result,
+                    question,
+                    model=model,
+                    result_limit=result_limit,
+                    temperature=temperature,
+                )
+            pprint.pp(("Analyzed Results:", json.loads(inter_result)["result"]))
             print("\nFollowing Sections are referenced in the analysis:")
             for title in section_titles:
                 print(title.strip())
@@ -1050,23 +1136,69 @@ def chat_main(question,model="chat35",threshold=0.8,input_prompt=3,result_limit=
             return json.loads(inter_result)
     if exp_mode == 1:
         if input_prompt == 1:
-            result,response = query_database_result(question,model = model,input_prompt=one_shot_input_prompt,temperature=temperature)
+            result, response = query_database_result(
+                question,
+                model=model,
+                input_prompt=one_shot_input_prompt,
+                temperature=temperature,
+            )
             if output_config == 1:
-                inter_result,section_titles,context = LLM_output_result_config_1(result, question, model=model,result_limit=result_limit,temperature=temperature)
+                inter_result, section_titles, context = LLM_output_result_config_1(
+                    result,
+                    question,
+                    model=model,
+                    result_limit=result_limit,
+                    temperature=temperature,
+                )
             if output_config == 2:
-                inter_result,section_titles,context = LLM_output_result_config_2(result, question, model=model,result_limit=result_limit,temperature=temperature)
+                inter_result, section_titles, context = LLM_output_result_config_2(
+                    result,
+                    question,
+                    model=model,
+                    result_limit=result_limit,
+                    temperature=temperature,
+                )
             if output_config == 3:
-                inter_result,section_titles,context = LLM_output_result_config_3(result, question, model=model,result_limit=result_limit,temperature=temperature)
-            return json.loads(inter_result)['result'],section_titles,context
+                inter_result, section_titles, context = LLM_output_result_config_3(
+                    result,
+                    question,
+                    model=model,
+                    result_limit=result_limit,
+                    temperature=temperature,
+                )
+            return json.loads(inter_result)["result"], section_titles, context
         if input_prompt == 3:
-            result,response = query_database_result(question,model = model,input_prompt=three_shot_input_prompt,temperature=temperature)
+            result, response = query_database_result(
+                question,
+                model=model,
+                input_prompt=three_shot_input_prompt,
+                temperature=temperature,
+            )
             if output_config == 1:
-                inter_result,section_titles,context = LLM_output_result_config_1(result, question, model=model,result_limit=result_limit,temperature=temperature)
+                inter_result, section_titles, context = LLM_output_result_config_1(
+                    result,
+                    question,
+                    model=model,
+                    result_limit=result_limit,
+                    temperature=temperature,
+                )
             if output_config == 2:
-                inter_result,section_titles,context = LLM_output_result_config_2(result, question, model=model,result_limit=result_limit,temperature=temperature)
+                inter_result, section_titles, context = LLM_output_result_config_2(
+                    result,
+                    question,
+                    model=model,
+                    result_limit=result_limit,
+                    temperature=temperature,
+                )
             if output_config == 3:
-                inter_result,section_titles,context = LLM_output_result_config_3(result, question, model=model,result_limit=result_limit,temperature=temperature)
-            return json.loads(inter_result)['result'],section_titles,context
+                inter_result, section_titles, context = LLM_output_result_config_3(
+                    result,
+                    question,
+                    model=model,
+                    result_limit=result_limit,
+                    temperature=temperature,
+                )
+            return json.loads(inter_result)["result"], section_titles, context
 
 
 # Input the example prompt to test the chatbot
@@ -1078,7 +1210,6 @@ def chat_main(question,model="chat35",threshold=0.8,input_prompt=3,result_limit=
 ## What is the emission factor for an intermittent bleed device?
 ## We have a CEMS for our acid gas units but no vent meter, what calculation method should we use?
 ## How many calculation methods are available for G&B storage tanks?
-
 
 
 model = sys.argv[1]
@@ -1099,11 +1230,22 @@ try:
     output_config = int(sys.argv[6])
     exp_mode = int(sys.argv[7])
 
-    with open('questions.txt') as f:
+    with open("questions.txt") as f:
         questions = f.readlines()
         for question in questions:
             question = question.strip()
-            chat_result = chat_main(question,model=model,threshold=threshold,input_prompt=input_prompt,result_limit=result_limit,temperature = temperature,output_config = output_config,exp_mode=exp_mode)
+            chat_result = chat_main(
+                question,
+                model=model,
+                threshold=threshold,
+                input_prompt=input_prompt,
+                result_limit=result_limit,
+                temperature=temperature,
+                output_config=output_config,
+                exp_mode=exp_mode,
+            )
 
 except:
-    print(" Example Usage: python chat.py model threshold input_prompt result_limit temperature output_config exp_mode")
+    print(
+        " Example Usage: python chat.py model threshold input_prompt result_limit temperature output_config exp_mode"
+    )
