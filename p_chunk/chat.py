@@ -10,6 +10,7 @@ import pprint
 import pandas as pd
 from tqdm import tqdm
 import sys
+import time
 
 
 # Load environment variables
@@ -33,8 +34,6 @@ api_url = f"https://{resource_name}.openai.azure.com/openai/deployments/{chat_de
 username = os.environ.get("NEO4J_USERNAME")
 password = os.environ.get("NEO4J_PASSWORD")
 url = os.environ.get("NEO4J_URI")
-
-print(api_key)
 
 # Creating AzureOpneAI client
 client = AzureOpenAI(
@@ -1198,7 +1197,10 @@ def chat_main(
                     result_limit=result_limit,
                     temperature=temperature,
                 )
+            
             return json.loads(inter_result)["result"], section_titles, context
+        
+    
 
 
 # Input the example prompt to test the chatbot
@@ -1229,10 +1231,11 @@ try:
     temperature = float(sys.argv[5])
     output_config = int(sys.argv[6])
     exp_mode = int(sys.argv[7])
-
+    
     with open("questions.txt") as f:
         questions = f.readlines()
         for question in questions:
+            start_time = time.time()
             question = question.strip()
             chat_result = chat_main(
                 question,
@@ -1244,8 +1247,12 @@ try:
                 output_config=output_config,
                 exp_mode=exp_mode,
             )
+            end_time = time.time()
+            print(f"\nTime taken: {round(end_time - start_time,3)} seconds")
+    
 
 except:
     print(
         " Example Usage: python chat.py model threshold input_prompt result_limit temperature output_config exp_mode"
+        # "Example Usage: python3 chat.py chat35 0.8 1 50 0 2 0"
     )

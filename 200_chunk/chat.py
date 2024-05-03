@@ -10,6 +10,7 @@ import pprint
 import pandas as pd
 from tqdm import tqdm
 import sys
+import time
 
 
 # Load environment variables
@@ -1191,6 +1192,7 @@ def chat_main(
                     result_limit=result_limit,
                     temperature=temperature,
                 )
+
             return json.loads(inter_result)["result"], section_titles, context
 
 
@@ -1226,6 +1228,7 @@ try:
     with open("questions.txt") as f:
         questions = f.readlines()
         for question in questions:
+            start_time = time.time()
             question = question.strip()
             chat_result = chat_main(
                 question,
@@ -1237,6 +1240,8 @@ try:
                 output_config=output_config,
                 exp_mode=exp_mode,
             )
+            end_time = time.time()
+            print(f"\nTime taken: {round(end_time - start_time,3)} seconds")
 
 except:
     print(
